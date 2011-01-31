@@ -2,7 +2,7 @@ See live demo at http://jsfiddle.net/donabrams/txpdk/
 
 SHORT DESCR:
 This is an html embeddable widget that changes state depending on actions done 
-to a state.
+to a widget.
 
 LONG DESCRIPTION:
 At the api level, there are stores, states, and the widget:
