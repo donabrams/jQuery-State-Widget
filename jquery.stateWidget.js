@@ -516,4 +516,3 @@
     }; /** End utility functions and classes */
 
 })(jQuery);
-});
