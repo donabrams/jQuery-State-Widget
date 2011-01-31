@@ -1,6 +1,71 @@
 See live demo at http://jsfiddle.net/donabrams/txpdk/
 
-Although this source is open (since it is javascript after all-- I suppose we could minimize it), it is copyright of University of Delaware. Good luck dealing with them!
+SHORT DESCR:
+This is a site embeddable widget that changes state depending on actions done 
+to a state.
+
+LONG DESCRIPTION:
+At the api level, there are stores, states, and the widget:
+States:
+ - Determine what the next state will be asynchronously (synchronous wrapper 
+   provided).
+ - Can be loaded.  By default, this will go through a function stack (either 
+   strings assumed to be this-local function name or actually functions) and 
+   wrap them so they are called asynchronously in turn.
+Store:
+ - Can be used to asynchronously get/put data.
+Widget can:
+ - Locally get/save data synchronously (stored in the local instance)
+ - Use a store to asynchronously get/put data.
+ - Do actions, which transition a state or not.  By default, while the action 
+   is being processed, no further actions can be processed.
+ - Saves the current state.
+
+
+At the implementation level, I have many conventions, all of which can be 
+overridden:
+States
+ - Default function stack is: init, loadTemplate, onTemplateLoad. By default,
+   init and onTemplateLoad are blank wrappers around the synchronous _init and 
+   _onTemplateLoad functions (if provided).
+ - loadTemplate uses the data stored on the widget to decorate a jquery 
+   template wrapper ($.udel.template) stored in the widget keyed by 
+   this.templateName asynchronously. It also respects the flag 
+   this.keepPreviousTemplate which by default is false.
+ - getNextState returns a state provided by the widget keyed by the
+   stateName (keyed by the action in this.action).  The reason for this double 
+   keying is twofold: limiting what states can be transitioned to and allowing
+   the state selection to be programmatically determined (synchronous only)
+Store:
+ - preformatter and postformatter used to massage data if provided
+ - Choice of ajax method (POST by default)
+Widget:
+ - Intializes stores, templates, and states found in the options and sets them
+   on this.
+ - For stores and templates, assumes if only a string is provided it is a url.
+ - For states, assumes if only a string is provided, it is the templateName 
+   (and additional assumes it is a final state with no transitions).
+ - Has storeBaseUrl and templateBaseUrl options (http urls ignore these).
+ - Binds saveState to document.onUnload.
+
+
+TODO:
+ - Use events instead of pollingWait most places.
+ - Add an event in addition to the this.changingState flag.
+ - Add a convention to the template to more easily transition the widget 
+   (this is the ugliest parts of templating right now). Likely this would be
+   an additional state functionStack function that decorates all the links
+   of some class to do some action onClick.
+
+
+LICENSE:
+Although this project's source is open (since it is javascript after all), all
+of its content is copyright of University of Delaware and we have no policy on 
+what license we can release things under without a lot of calling around. If 
+you really want a license to use this, I'll try and help, but it will likely be
+low priority-- so good luck. I'd personally recommend extracting the principles
+from this code and doing something similar.
+
 
 Donald Abrams
 Programmer/Analyst
