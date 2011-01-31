@@ -1,7 +1,7 @@
 See live demo at http://jsfiddle.net/donabrams/txpdk/
 
 SHORT DESCR:
-This is a site embeddable widget that changes state depending on actions done 
+This is an html embeddable widget that changes state depending on actions done 
 to a state.
 
 LONG DESCRIPTION:
@@ -56,6 +56,8 @@ TODO:
    (this is the ugliest parts of templating right now). Likely this would be
    an additional state functionStack function that decorates all the links
    of some class to do some action onClick.
+ - Add to initial data from input fields wrapped by a stateWidget. Not sure
+   if this should extend js provided initial data or the other way around.
 
 
 LICENSE:
