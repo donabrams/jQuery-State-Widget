@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>simple state widget example</title>
+<link rel="stylesheet" type="text/css" href="http://ajax.microsoft.com/ajax/jquery.ui/1.8.5/themes/ui-lightness/jquery-ui.css" />
+<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jQuery/jquery-1.4.4.js"></script> 
+<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.5/jquery-ui.js"></script> 
+<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script> 
+<script type="text/javascript" src="jquery.stateWidget.js"></script>
+<script type="text/javascript" src="simpleExample.js"></script>
+<script>
+$(function() {
+    $("#content").stateWidgetTester();
+    var doAnother = function() {
+        $("#content2").stateWidgetTester();
+    };
+    setTimeout(doAnother, 4000);
+})(jQuery);
+</script>
+</head>
+<body>
+<div id="content">original</div>
+<div id="content2">original2</div>
+</body>
+</html>
