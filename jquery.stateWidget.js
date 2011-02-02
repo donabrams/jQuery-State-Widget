@@ -1,6 +1,5 @@
 $(function() {
     $.udel = $.udel || {};
-
 /** Start of API **/
     $.udel.api = $.udel.api || {};
     //
@@ -222,7 +221,29 @@ $(function() {
         //
         // Define the function stack for $.udel.api.state
         //
-        this.functionStack = ['init', 'loadTemplate', 'decorateTemplate', 'onTemplateLoad'];
+        this.functionStack = ['delayActionSupport', 'init', 'loadTemplate', 
+				'decorateTemplate', 'onTemplateLoad'];
+		//
+		// This is a utility function to delay an action, but only if another
+		// action hasn't been executed.
+		//
+		// Very useful for timeout actions or delays.
+		//
+		this.delayAction = function(delay, widget, action, data) {
+			var a = widget.delayedAction = {};
+			setTimeout(function() {
+						if (a === widget.delayedAction) {
+							widget.doAction(action, data, true);
+						}
+					}, delay);
+		};
+		//
+		// 
+		//
+		this.delayActionSupport = function(callback, widget) {
+			widget.delayedAction = null;
+			callback();
+		};
         //
         // Initialize the widget before the template loads.
         // If transitioning to another state, this rarely is the place--
@@ -240,12 +261,13 @@ $(function() {
             if (this._decorateTemplate) {
                 this._decorateTemplate(widget, initialData);
             }
-			$(widget.element, ".stateWidgetAction").each(function(i) {
-					var l = $(i);
+			$(".stateWidgetAction",widget.element).each(function(i, o) {
+					var l = $(o);
 					l.bind(l.attr("eventType") ? l.attr("eventType") : 'click', 
-					function() {
-						widget.doAction($(this).attr("action"));
-					});
+							function() {
+								widget.doAction($(this).attr("action"));
+								return false;
+							});
 			});
 			callback();
 		};
@@ -637,5 +659,4 @@ $(function() {
         this._init();
     };
 /** End utility functions and classes */
-
 });

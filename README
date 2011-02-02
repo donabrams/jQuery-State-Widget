@@ -27,10 +27,10 @@ Widget can:
 At the implementation level, I have many conventions, all of which can be 
 overridden:
 States
- - Default function stack is: init, loadTemplate, decorateTemplate, 
-   onTemplateLoad. By default init, decorateTemplate and onTemplateLoad are 
-   blank wrappers around the synchronous _init, _decorateTemplate and 
-   _onTemplateLoad functions respectively (if defined).
+ - Default function stack is: delayActionSupport, init, loadTemplate, 
+   decorateTemplate, onTemplateLoad. By default init, decorateTemplate and 
+   onTemplateLoad are blank wrappers around the synchronous _init, 
+   _decorateTemplate and _onTemplateLoad functions respectively (if defined).
  - loadTemplate uses the data stored on the widget to decorate a jquery 
    template wrapper ($.udel.template) stored in the widget keyed by 
    this.templateName asynchronously. It also respects the flag 
@@ -42,6 +42,10 @@ States
    stateName (keyed by the action in this.action).  The reason for this double 
    keying is twofold: limiting what states can be transitioned to and allowing
    the state selection to be programmatically determined (synchronous only)
+ - Use delayAction rather than use a setTimeout if you want to delay an action.
+   This also can be used for autosaves and such. If the action is changed before
+   the delay, the delayedAction will not execute (providing the next state uses 
+   delayedActionSupport).
 Store:
  - preformatter and postformatter used to massage data if provided
  - Choice of ajax method (POST by default)
