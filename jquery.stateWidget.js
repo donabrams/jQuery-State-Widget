@@ -1,4 +1,4 @@
-(function($) {
+$(function() {
     $.udel = $.udel || {};
 
 /** Start of API **/
@@ -70,7 +70,7 @@
                 } else if (this.initialState) {
                     gotoNextState(this.initialState);
                 }
-            } else if (queueAfterIfChanging) {
+            } else if (queueAfterIfChangingState) {
 				this.nextAction = {action: action, data:dataIn};
 			}
         }
@@ -232,7 +232,7 @@
             if (this._init) {
                 this._init(widget, initialData);
             }
-            callback(nextAction);
+            callback();
         };
 		//
 		// This decorates a te
@@ -243,10 +243,10 @@
 			$(widget.element, ".stateWidgetAction").bind(
 					$(this).attr("eventType") ? $(this).attr("eventType") : 'click', 
 					function() {
-						widget.doAction($(this).attr(action));
+						widget.doAction($(this).attr("action"));
 					});
-			callback(nextAction);
-		}
+			callback();
+		};
         //
         // Get the template determined by this.templateName
         //  stored on the widget.  Then, apply the template
@@ -284,7 +284,7 @@
             if (nextState && $.isFunction(nextState)) {
                 nextState = nextState(widget, this);
             }
-            return nextState == null ? null : widget.states[nextState];
+            return nextState === null ? null : widget.states[nextState];
         };
         $.extend(true, this, args);
     };
@@ -377,7 +377,7 @@
                     url: argsIn
                 };
             }
-            if (this.options.storeBaseUrl && args.url && (args.url.substring(0, 4) != "http")) {
+            if (this.options.storeBaseUrl && args.url && (args.url.substring(0, 4) !== "http")) {
                 args.url = this.options.storeBaseUrl + args.url;
             }
             return new $.udel.store(args);
@@ -395,7 +395,7 @@
                     url: argsIn
                 };
             }
-            if (this.options.templateBaseUrl && args.url && (args.url.substring(0, 4) != "http")) {
+            if (this.options.templateBaseUrl && args.url && (args.url.substring(0, 4) !== "http")) {
                 args.url = this.options.templateBaseUrl + args.url;
             }
             return new $.udel.template(args);
@@ -430,9 +430,9 @@
 				var that = this;
 				var waits = this.waits;
 				var remove = function() {
-					if (this.waits == that.waits) {
+					if (this.waits === that.waits) {
 						var waits = this.waits;
-						if (waits[i] != null) {
+						if (waits[i] !== null) {
 							var f = waits[i].failure;
 							waits[i] = null;
 							f();
@@ -447,7 +447,7 @@
 			var waits = this.waits;
 			this.waits = [];
 			$.each(waits, function(i) {
-				if (waits[i] != null) {
+				if (waits[i] !== null) {
 					var s = waits[i].success;
 					waits[i] = null;
 					s();
@@ -487,12 +487,12 @@
 		};
 		this.markAsLoading = function(key) {
 			this.ready = false;
-		}
+		};
 		// key is whatever you want it to be
 		// callback takes 2 arguments: success and the object
 		// maxWait in ms, optional
 		this.get = function(key, callback, maxWait) {
-			if (callback == null) {
+			if (callback === null) {
 				return;
 			}
 			if (this.ready[key] === undefined) {
@@ -549,7 +549,7 @@
 			}
 		};
 		if (args) {
-        	$.extend(true, this, args);
+			$.extend(true, this, args);
 		}
 	};
     //
@@ -587,7 +587,7 @@
             if (this.template) {
 				callback(this.template);
             } else if (this.templateString) {
-				this.template = $.template(that.templateString));
+				this.template = $.template(this.templateString);
 				callback(this.template);
             } else if (this.url) {
 				if (this.isCachingEnabled) {
@@ -624,4 +624,4 @@
     };
 /** End utility functions and classes */
 
-})(jQuery);
+});
