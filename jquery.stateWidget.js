@@ -585,10 +585,14 @@ $(function() {
         };
         this.getTemplate = function(callback) {
             if (this.template) {
-				callback(this.template);
+				if (callback) {
+					callback(this.template);
+				}
             } else if (this.templateString) {
 				this.template = $.template(this.templateString);
-				callback(this.template);
+				if (callback) {
+					callback(this.template);
+				}
             } else if (this.url) {
 				if (this.isCachingEnabled) {
 					var cache = $.udel.template.urlCache = 
@@ -609,11 +613,15 @@ $(function() {
                 ifModified: that.isCachingEnabled,
                 success: function(tmplString) {
 					that.template = $.template(tmplString);
-					callback(that.template);
+					if (callback) {
+						callback(that.template);
+					}
                 },
                 error: function() {
 					that.template = "Error loading template from url.";
-					callback(that.template);
+					if (callback) {
+						callback(that.template);
+					}
                 }
             });
         };
