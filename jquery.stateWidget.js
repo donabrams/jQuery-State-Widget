@@ -1,5 +1,6 @@
 $(function() {
     $.udel = $.udel || {};
+
 /** Start of API **/
     $.udel.api = $.udel.api || {};
     //
@@ -217,11 +218,11 @@ $(function() {
     //   These templates are '$.udel.template's.
     // 
     $.udel.state = function(args) {
-        $.extend(true, this, $.udel.api.state);
-        //
-        // Define the function stack for $.udel.api.state
-        //
-        this.functionStack = ['delayActionSupport', 'init', 'loadTemplate', 
+	    $.extend(true, this, $.udel.api.state);
+	    //
+	    // Define the function stack for $.udel.api.state
+	    //
+	    this.functionStack = ['delayedActionSupport', 'init', 'loadTemplate', 
 				'decorateTemplate', 'onTemplateLoad'];
 		//
 		// This is a utility function to delay an action, but only if another
@@ -240,27 +241,27 @@ $(function() {
 		//
 		// 
 		//
-		this.delayActionSupport = function(callback, widget) {
+		this.delayedActionSupport = function(callback, widget) {
 			widget.delayedAction = null;
 			callback();
 		};
-        //
-        // Initialize the widget before the template loads.
-        // If transitioning to another state, this rarely is the place--
-        //  only transition here if you're not waiting for a fetch.
-        //
-        this.init = function(callback, widget, initialData) {
-            if (this._init) {
-                this._init(widget, initialData);
-            }
-            callback();
-        };
+	    //
+	    // Initialize the widget before the template loads.
+	    // If transitioning to another state, this rarely is the place--
+	    //  only transition here if you're not waiting for a fetch.
+	    //
+	    this.init = function(callback, widget, initialData) {
+	        if (this._init) {
+	            this._init(widget, initialData);
+	        }
+	        callback();
+	    };
 		//
 		// This decorates a te
 		this.decorateTemplate = function(callback, widget, initialData) {
-            if (this._decorateTemplate) {
-                this._decorateTemplate(widget, initialData);
-            }
+	        if (this._decorateTemplate) {
+	            this._decorateTemplate(widget, initialData);
+	        }
 			$(".stateWidgetAction",widget.element).each(function(i, o) {
 					var l = $(o);
 					l.bind(l.attr("eventType") ? l.attr("eventType") : 'click', 
@@ -271,46 +272,48 @@ $(function() {
 			});
 			callback();
 		};
-        //
-        // Get the template determined by this.templateName
-        //  stored on the widget.  Then, apply the template
-        //  to the widgetElement with the widget data.
-        //
-        this.keepPreviousTemplate = false;
-        this.loadTemplate = function(callback, widget, data, templateName) {
-            var template = widget.templates[templateName ? templateName : this.templateName];
-            template.applyTemplate(widget.getData(), widget.element, callback, this.keepPreviousTemplate);
-        };
-        //
-        // Do something after the widget after the template loads and is decorated.
-        // If transitioning to another state, this is typically the place
-        //  (esp. if that transition is based on fetched data).
-        //
-        this.onTemplateLoad = function(callback, widget) {
-            if (this._onTemplateLoad) {
-                this._onTemplateLoad(widget);
-            }
-            callback();
-        };
-        //
-        // This sychronous getNextState uses this.actions
-        //  to discover the name of the state mapping to 
-        //  the name of a state in this widget.
-        // 
-        // The action can be either a string or a synchronous
-        //  function that returns a string (takes a widget and this state.)
+	    //
+	    // Get the template determined by this.templateName
+	    //  stored on the widget.  Then, apply the template
+	    //  to the widgetElement with the widget data.
+	    //
+	    this.keepPreviousTemplate = false;
+	    this.loadTemplate = function(callback, widget, data, templateName) {
+	        var template = widget.templates[templateName ? templateName : this.templateName];
+	        template.applyTemplate(widget.getData(), widget.element, callback, this.keepPreviousTemplate);
+	    };
+	    //
+	    // Do something after the widget after the template loads and is decorated.
+	    // If transitioning to another state, this is typically the place
+	    //  (esp. if that transition is based on fetched data).
+	    //
+	    this.onTemplateLoad = function(callback, widget) {
+	        if (this._onTemplateLoad) {
+	            this._onTemplateLoad(widget);
+	        }
+	        callback();
+	    };
+	    //
+	    // This sychronous getNextState uses this.actions
+	    //  to discover the name of the state mapping to 
+	    //  the name of a state in this widget.
+	    // 
+	    // The action can be either a string or a synchronous
+	    //  function that returns a string (takes a widget and this state.)
 		//
 		// You may choose not to validate an action in its action function 
 		// by returning null
-        //
-        this._getNextState = function(widget, action) {
-            var nextState = this.actions[action];
-            if (nextState && $.isFunction(nextState)) {
-                nextState = nextState(widget, this);
-            }
-            return nextState === null ? null : widget.states[nextState];
-        };
-        $.extend(true, this, args);
+	    //
+	    this._getNextState = function(widget, action) {
+	        var nextState = this.actions[action];
+	        if (nextState && $.isFunction(nextState)) {
+	            nextState = nextState(widget, this);
+	        }
+	        return nextState === null ? null : widget.states[nextState];
+	    };
+		if (args) {
+			$.extend(true, this, args);
+		}
     };
     //
     // Now this is the wonderful $.udel.stateWidget complete with a ton of conventions.
@@ -479,7 +482,7 @@ $(function() {
 			});
 		}; 
 		if (args) {
-	        $.extend(true, this, args);
+			$.extend(true, this, args);
 		}
 	};
 	//
@@ -510,13 +513,13 @@ $(function() {
 			return this.ready[key] !== undefined;
 		};
 		this.markAsLoading = function(key) {
-			this.ready = false;
+			this.ready[key] = false;
 		};
 		// key is whatever you want it to be
 		// callback takes 2 arguments: success and the object
 		// maxWait in ms, optional
 		this.get = function(key, callback, maxWait) {
-			if (callback === null) {
+			if (!callback) {
 				return;
 			}
 			if (this.ready[key] === undefined) {
@@ -524,7 +527,7 @@ $(function() {
 			} else if (this.ready[key]) {
 				callback(true, this.cache[key]);
 			} else if (this.allowWaiting) {
-				this._addWaiter(key, callback, maxWait);
+				this._addWait(key, callback, maxWait);
 			} else {
 				callback(false);
 			}
@@ -559,7 +562,7 @@ $(function() {
 			}		
 		};
 		this._addWait = function(key, callback, maxWait) {
-			var waitQueue = this.waiters[key] = this.waiters[key] || $.udel.waitQueue();
+			var waitQueue = this.waiters[key] = this.waiters[key] || new $.udel.waitQueue();
 			var that = this;
 			waitQueue.addWait(
 				function() {that.get(key, callback);},
@@ -593,70 +596,76 @@ $(function() {
     //
     $.udel.template = function(args) {
 		this.isCachingEnabled = true;
-        this.applyTemplate = function(data, target, callback, keepPreviousTemplate) {
+	    this.applyTemplate = function(data, target, callback, keepPreviousTemplate) {
 			var that = this;
 			this.getTemplate(function(template) {
-		        that._applyTemplate(template, data, target, keepPreviousTemplate);
-		        if (callback) {
-		            callback();
-		        }
+				if (template !== null) {
+				    that._applyTemplate(template, data, target, keepPreviousTemplate);
+				}
+			    if (callback) {
+			        callback();
+			    }
 			});
-        };
-        this._applyTemplate = function(template, data, target, keepPreviousTemplate) {
-            if (!keepPreviousTemplate) {
-                target.html("");
-            }
-            $.tmpl(template, data).appendTo(target);
-        };
-        this.getTemplate = function(callback) {
-            if (this.template) {
+	    };
+	    this._applyTemplate = function(template, data, target, keepPreviousTemplate) {
+	        if (!keepPreviousTemplate) {
+	            target.html("");
+	        }
+	        $.tmpl(template, data).appendTo(target);
+	    };
+	    this.getTemplate = function(callback) {
+	        if (this.template) {
 				if (callback) {
 					callback(this.template);
 				}
-            } else if (this.templateString) {
+	        } else if (this.templateString) {
 				this.template = $.template(this.templateString);
 				if (callback) {
 					callback(this.template);
 				}
-            } else if (this.url) {
+	        } else if (this.url) {
 				if (this.isCachingEnabled) {
-					var cache = $.udel.template.urlCache = 
-							$.udel.template.urlCache || $.udel.cache();
-					cache.getput(this.url, this.loadTemplate, callback);
+					var cache = $.udel.template.urlCache = $.udel.template.urlCache || new $.udel.cache();
+					var that = this;
+					cache.getput(this.url, 
+							function(callback) {
+								that.loadTemplate(that.url, that.isCachingEnabled, callback);
+							}, 
+							function(success, template) {
+								if (success) {
+									that.template = template; 
+								}
+								if (callback) {
+									callback(template);
+								}
+							});
 				}
 				else {
 					this.loadTemplate(callback);
 				}
 			}
 		};
-		this.loadTemplate = function(callback) {
-            var that = this;
-            $.ajax({
-                dataType: "text",
-                url: that.url,
-                type: "GET",
-                ifModified: that.isCachingEnabled,
-                success: function(tmplString) {
-					that.template = $.template(tmplString);
-					if (callback) {
-						callback(that.template);
-					}
-                },
-                error: function() {
-					that.template = "Error loading template from url.";
-					if (callback) {
-						callback(that.template);
-					}
-                }
-            });
-        };
+		this.loadTemplate = function(url, isCachingEnabled, callback) {
+	        $.ajax({
+	            dataType: "text",
+	            url: url,
+	            type: "GET",
+	            ifModified: isCachingEnabled,
+	            success: function(tmplString) {
+					callback($.template(tmplString));
+	            },
+	            error: function() {
+					callback("error loading template");
+	            }
+	        });
+	    };
 		this._init = function() {
 			this.getTemplate();
 		};
 		if (args) {
-	        $.extend(true, this, args);
-		}
-        this._init();
+			$.extend(true, this, args);
+		}		
+        toRet._init();
     };
 /** End utility functions and classes */
 });
