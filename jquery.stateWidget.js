@@ -665,7 +665,7 @@ $(function() {
 		if (args) {
 			$.extend(true, this, args);
 		}		
-        toRet._init();
+        this._init();
     };
 /** End utility functions and classes */
 });
