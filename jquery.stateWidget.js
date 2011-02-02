@@ -625,6 +625,9 @@ $(function() {
                 }
             });
         };
+		this._init = function() {
+			this.getTemplate();
+		};
 		if (args) {
 	        $.extend(true, this, args);
 		}
