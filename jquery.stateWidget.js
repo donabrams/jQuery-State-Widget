@@ -222,7 +222,7 @@ $(function() {
 	    //
 	    // Define the function stack for $.udel.api.state
 	    //
-	    this.functionStack = ['delayedActionSupport', 'init', 'loadTemplate', 
+	    this.functionStack = ['delayActionSupport', 'init', 'loadTemplate', 
 				'decorateTemplate', 'onTemplateLoad'];
 		//
 		// This is a utility function to delay an action, but only if another
@@ -241,7 +241,7 @@ $(function() {
 		//
 		// 
 		//
-		this.delayedActionSupport = function(callback, widget) {
+		this.delayActionSupport = function(callback, widget) {
 			widget.delayedAction = null;
 			callback();
 		};
