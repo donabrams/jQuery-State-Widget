@@ -1,7 +1,7 @@
 (function($) {
     $.udel = $.udel || {};
 
-    /** Start of API **/
+/** Start of API **/
     $.udel.api = $.udel.api || {};
     //
     // This is a stateWidget: a widget that exists by transitioning between 
@@ -40,15 +40,21 @@
                 return this.stores[storeName].fetch(callback, data);
             }
         },
-        doAction: function(action, dataIn) {
-            // If currently changing state, ignore other requests to change state.
-            // This means if changing state during state loading, you must 
-            //  call the callback first!
+        doAction: function(action, dataIn, queueAfterIfChangingState) {
+            // If currently changing state, ignore other requests to change 
+			//  state unless queueAfterIfChangingState
             if (!this.changingState) {
                 this.changingState = true;
                 var that = this;
                 var callback = function() {
                     that.changingState = false;
+					//TODO: fire stateChanged event here!
+					if (that.nextAction) {
+						var nextAction = that.nextAction.action;
+						var data = that.nextAction.data;
+						that.nextAction = null;
+						that.doAction(nextAction, data);
+					}
                 };
                 var gotoNextState = function(nextState) {
                     if (nextState) {
@@ -63,10 +69,10 @@
                     this.currentState.getNextState(gotoNextState, this, action);
                 } else if (this.initialState) {
                     gotoNextState(this.initialState);
-                } else if (this.initialStateName && this.states && this.states[this.initialStateName]) {
-                    gotoNextState(this.state[this.initialStateName]);
                 }
-            }
+            } else if (queueAfterIfChanging) {
+				this.nextAction = {action: action, data:dataIn};
+			}
         }
     };
     //
@@ -108,9 +114,12 @@
         //
         // This is usually overloaded (unless a widget can transition 
         //  to ANY state.
+		// 
+		// Returns null to NOT validate the action. The current state will remain.
+		//
         //
         getNextState: function(callback, widget, action) {
-            callback(this._getNextState(widget, action));
+			callback(this._getNextState(widget, action));
         },
         //
         // Synchronous method for getting the next state, wrapped by
@@ -142,9 +151,9 @@
                 callback(true, toRet);
             }
         }
-    }; /** End of API **/
-
-    /** Start UD implementations **/
+    };
+/** End of API **/
+/** Start UD implementations **/
     //
     // This is a udel store implementation.
     // Pretty straightforward url based implementation with some additional hooks.
@@ -213,7 +222,7 @@
         //
         // Define the function stack for $.udel.api.state
         //
-        this.functionStack = ['init', 'loadTemplate', 'onTemplateLoad'];
+        this.functionStack = ['init', 'loadTemplate', 'decorateTemplate', 'onTemplateLoad'];
         //
         // Initialize the widget before the template loads.
         // If transitioning to another state, this rarely is the place--
@@ -223,8 +232,21 @@
             if (this._init) {
                 this._init(widget, initialData);
             }
-            callback();
+            callback(nextAction);
         };
+		//
+		// This decorates a te
+		this.decorateTemplate = function(callback, widget, initialData) {
+            if (this._decorateTemplate) {
+                this._decorateTemplate(widget, initialData);
+            }
+			$(widget.element, ".stateWidgetAction").bind(
+					$(this).attr("eventType") ? $(this).attr("eventType") : 'click', 
+					function() {
+						widget.doAction($(this).attr(action));
+					});
+			callback(nextAction);
+		}
         //
         // Get the template determined by this.templateName
         //  stored on the widget.  Then, apply the template
@@ -236,7 +258,7 @@
             template.applyTemplate(widget.getData(), widget.element, callback, this.keepPreviousTemplate);
         };
         //
-        // Decorate the widget after the template loads.
+        // Do something after the widget after the template loads and is decorated.
         // If transitioning to another state, this is typically the place
         //  (esp. if that transition is based on fetched data).
         //
@@ -251,19 +273,18 @@
         //  to discover the name of the state mapping to 
         //  the name of a state in this widget.
         // 
-        // The action can be either a string or an synchronous
-        //  function that returns a string (executed on state scope).
+        // The action can be either a string or a synchronous
+        //  function that returns a string (takes a widget and this state.)
+		//
+		// You may choose not to validate an action in its action function 
+		// by returning null
         //
         this._getNextState = function(widget, action) {
             var nextState = this.actions[action];
-            if (!nextState) {
-                return null;
+            if (nextState && $.isFunction(nextState)) {
+                nextState = nextState(widget, this);
             }
-            if ($.isFunction(nextState)) {
-                //assumes the nextState function is synchronous
-                nextState = nextState(widget);
-            }
-            return widget.states[nextState];
+            return nextState == null ? null : widget.states[nextState];
         };
         $.extend(true, this, args);
     };
@@ -393,35 +414,144 @@
             return new $.udel.state(args);
         }
     });
-    $.widget("udel.stateWidget", stateWidget); /* End UD Implementation */
+    $.widget("udel.stateWidget", stateWidget); 
+/* End UD Implementation */
 
-    /** Utility functions and classes **/
+/** Utility functions and classes **/
+	//
+	// A wait queue that allows you to add waiters by some key then calling 
+    // them later (probably when some condition is satisfied).
+	//
+	$.udel.waitQueue = function(args) {
+		this.waits=[];
+		this.addWait = function(callback, maxWait, maxWaitExceeded) {
+			var i = this.waits.push({success: callback, failure:maxWaitExceeded});
+			if (maxWait) {
+				var that = this;
+				var waits = this.waits;
+				var remove = function() {
+					if (this.waits == that.waits) {
+						var waits = this.waits;
+						if (waits[i] != null) {
+							var f = waits[i].failure;
+							waits[i] = null;
+							f();
+						}
+					}
+				};
+				remove.waits = waits;
+				setTimeout(remove, maxWait);
+			}
+		};
+		this.resume = function(args) {
+			var waits = this.waits;
+			this.waits = [];
+			$.each(waits, function(i) {
+				if (waits[i] != null) {
+					var s = waits[i].success;
+					waits[i] = null;
+					s();
+				}
+			});
+		}; 
+		if (args) {
+	        $.extend(true, this, args);
+		}
+	};
+	//
+	// This is a cache implemenation
+	// You can synchronously put(), contains() and markAsLoading().
+	// You can asynchronously get() and getput() and putget().
+	//
+	// get() is asynchronous because it might wait until a put() is called if 
+	//  the key is marked as loading.
+	//  key is whatever you want it to be, required.
+	//  callback is an optional function that takes 2 arguments: 
+	//   success/boolean and the value/?
+	//  maxWait is optional, max wait time in ms
     //
-    // This polls a function at max $max_attempts until true, 
-    //  then executes a function.
-    // The scope is likely this, but ya never know.
-    //
-    $.pollingWait = function(max_attempts, delay, condFunc, condScope, func, scope /*, arguments */ ) {
-        var worker = function(attempts, max_attempts, delay, flagFunc, flagScope, func, scope, args) {
-            if (attempts >= max_attempts) {
-                return false;
-            }
-            if (!flagFunc.apply(flagScope || window, [])) {
-                //increment attempts
-                var args2 = [attempts + 1].concat(
-                Array.prototype.slice.call(arguments, 1));
-                var toApply = function() {
-                    worker.apply(this || window, args2 || []);
-                };
-                setTimeout(toApply, delay);
-            }
-            else {
-                //apply just the arguments!
-                func.apply(scope, args);
-            }
-        };
-        worker(0, max_attempts, delay, condFunc, condScope, func, scope, Array.prototype.slice.call(arguments, 6));
-    };
+	// putget() and getput() act both a get and a put. If the key is ready or 
+	//  markedAsLoading, it acts just like get(). Otherwise, it marks the key
+	//  as loading, loads a value and gets it. If loader is not a function,
+	//  it calls put(key,loader) and then get(key,callback). If loader is a 
+	//  function, it passes loader() a callback function that takes a value,
+	//  calls put(key,value) then get(key,callback).
+	//
+    $.udel.cache = function(args) {
+		this.cache={};
+		this.ready={};
+		this.allowWaiting = true;
+		this.waiters = {};
+		this.contains = function(key) {
+			return this.ready[key] !== undefined;
+		};
+		this.markAsLoading = function(key) {
+			this.ready = false;
+		}
+		// key is whatever you want it to be
+		// callback takes 2 arguments: success and the object
+		// maxWait in ms, optional
+		this.get = function(key, callback, maxWait) {
+			if (callback == null) {
+				return;
+			}
+			if (this.ready[key] === undefined) {
+				callback(false);
+			} else if (this.ready[key]) {
+				callback(true, this.cache[key]);
+			} else if (this.allowWaiting) {
+				this._addWaiter(key, callback, maxWait);
+			} else {
+				callback(false);
+			}
+		};
+		this.put = function(key, value) {
+			this.cache[key] = value;
+			this.ready[key] = true;
+			if (this.allowWaiting) {
+				this._resume(key);
+			}
+		};
+		this.putget = this.getput = function(key, loader, callback, maxWait) {
+			if (this.ready[key] === undefined) {
+				this.markAsLoading(key);
+				if ($.isFunction(loader)) {
+					if (maxWait) {
+						this.get(key, callback, maxWait);
+					}
+					var that = this;
+					loader(function(value) {
+						that.put(key, value);
+						if (!maxWait) {
+							that.get(key, callback);
+						}
+					});
+				} else {
+					this.put(key, loader);
+					this.get(key, callback);
+				}
+			} else {
+				this.get(key, callback);
+			}		
+		};
+		this._addWait = function(key, callback, maxWait) {
+			var waitQueue = this.waiters[key] = this.waiters[key] || $.udel.waitQueue();
+			var that = this;
+			waitQueue.addWait(
+				function() {that.get(key, callback);},
+				function() {callback(false);},
+				maxWait);
+		};
+		this._resume = function(key) {
+			var waitQueue = this.waiters[key];
+			if (waitQueue) {
+				waitQueue.resume();
+			}
+		};
+		if (args) {
+        	$.extend(true, this, args);
+		}
+	};
     //
     // This is a wrapper around the jquery template library.
     //
@@ -438,81 +568,60 @@
     // You can also override cacheIt to avoid caching (jsps/dynamic).
     //
     $.udel.template = function(args) {
-        this.ready = false;
-        this.cacheIt = true;
-        //wait 4 seconds for the template if its not loaded yet-- these can be overridden
-        this.delay = 200; //ms
-        this.attempts = 20; //times
+		this.isCachingEnabled = true;
         this.applyTemplate = function(data, target, callback, keepPreviousTemplate) {
-            var that = this;
-            $.pollingWait(this.attempts, this.delay, function() {
-                return that.ready;
-            }, that, function() {
-                that._applyTemplate(data, target, keepPreviousTemplate);
-                if (callback) {
-                    callback();
-                }
-            }, that);
+			this.getTemplate(function(template) {
+		        this._applyTemplate(template, data, target, keepPreviousTemplate);
+		        if (callback) {
+		            callback();
+		        }
+			});
         };
-        this._applyTemplate = function(data, target, keepPreviousTemplate) {
-            if (!target) {
-                target = data;
-                data = null;
+        this._applyTemplate = function(template, data, target, keepPreviousTemplate) {
+            if (!keepPreviousTemplate) {
+                target.html("");
             }
-            if (this.template) {
-                if (!keepPreviousTemplate) {
-                    target.html("");
-                }
-                $.tmpl(this.template, data).appendTo(target);
-            }
+            $.tmpl(template, data).appendTo(target);
         };
-        this._init = function() {
+        this.getTemplate = function(callback) {
             if (this.template) {
-                this.ready = true;
+				callback(this.template);
             } else if (this.templateString) {
-                this.template = $.template(this.templateString);
-                this.ready = true;
+				this.template = $.template(that.templateString));
+				callback(this.template);
             } else if (this.url) {
-                var that = this;
-                if (that.cacheIt && $.udel.template.templateCache && $.udel.template.templateCache[that.url]) {
-                    $.pollingWait(this.attempts, this.delay, function() {
-                        return $.udel.template.templateCache[that.url].ready;
-                    }, that, function() {
-                        that.template = $.udel.template.templateCache[that.url].template;
-                        that.ready = true;
-                    }, that);
+				if (this.isCachingEnabled) {
+					var cache = $.udel.template.urlCache = 
+							$.udel.template.urlCache || $.udel.cache();
+					cache.getput(this.url, this.loadTemplate, callback);
+				}
+				else {
+					this.loadTemplate(callback);
+				}
+			}
+		};
+		this.loadTemplate = function(callback) {
+            var that = this;
+            $.ajax({
+                dataType: "text",
+                url: that.url,
+                type: "GET",
+                ifModified: that.isCachingEnabled,
+                success: function(tmplString) {
+					that.template = $.template(tmplString);
+					callback(that.template);
+                },
+                error: function() {
+					that.template = "Error loading template from url.";
+					callback(that.template);
                 }
-                else {
-                    if (that.cacheIt) {
-                        $.udel.template.templateCache = $.udel.template.templateCache || {};
-                        $.udel.template.templateCache[that.url] = {
-                            ready: false
-                        };
-                    }
-                    $.ajax({
-                        dataType: "text",
-                        url: that.url,
-                        type: "GET",
-                        ifModified: that.cacheIt,
-                        success: function(tmplString) {
-                            that.template = $.template(tmplString);
-                            if (that.cacheIt) {
-                                $.udel.template.templateCache[that.url] = {
-                                    template: that.template,
-                                    ready: true
-                                };
-                            }
-                            that.ready = true;
-                        },
-                        error: function() {
-                            that.template = "Error loading template.";
-                        }
-                    });
-                }
-            }
+            });
         };
-        $.extend(true, this, args);
+		if (args) {
+	        $.extend(true, this, args);
+		}
         this._init();
-    }; /** End utility functions and classes */
+    };
+/** End utility functions and classes */
 
 })(jQuery);

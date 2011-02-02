@@ -18,20 +18,26 @@ Widget can:
  - Locally get/save data synchronously (stored in the local instance)
  - Use a store to asynchronously get/put data.
  - Do actions, which transition a state or not.  By default, while the action 
-   is being processed, no further actions can be processed.
- - Saves the current state.
+   is being processed, no further actions can be processed. Using the
+   queueAfterIfChangingState flag can allow actions to be chained but does
+   not stop the current state from loading.
+ - Save the current state.
 
 
 At the implementation level, I have many conventions, all of which can be 
 overridden:
 States
- - Default function stack is: init, loadTemplate, onTemplateLoad. By default,
-   init and onTemplateLoad are blank wrappers around the synchronous _init and 
-   _onTemplateLoad functions (if provided).
+ - Default function stack is: init, loadTemplate, decorateTemplate, 
+   onTemplateLoad. By default init, decorateTemplate and onTemplateLoad are 
+   blank wrappers around the synchronous _init, _decorateTemplate and 
+   _onTemplateLoad functions respectively (if defined).
  - loadTemplate uses the data stored on the widget to decorate a jquery 
    template wrapper ($.udel.template) stored in the widget keyed by 
    this.templateName asynchronously. It also respects the flag 
    this.keepPreviousTemplate which by default is false.
+ - decorateTemplate decorates all nodes with the class stateWidgetAction to 
+   bind to click to doAction (node.attr('action').  This is useful for buttons
+   since the widget is usually inaccessible from the view.
  - getNextState returns a state provided by the widget keyed by the
    stateName (keyed by the action in this.action).  The reason for this double 
    keying is twofold: limiting what states can be transitioned to and allowing
@@ -50,14 +56,18 @@ Widget:
 
 
 TODO:
- - Use events instead of pollingWait most places.
  - Add an event in addition to the this.changingState flag.
- - Add a convention to the template to more easily transition the widget 
-   (this is the ugliest parts of templating right now). Likely this would be
-   an additional state functionStack function that decorates all the links
-   of some class to do some action onClick.
- - Add to initial data from input fields wrapped by a stateWidget. Not sure
-   if this should extend js provided initial data or the other way around.
+
+Techniques/:
+ - If you want to add to initial data from input fields wrapped by a 
+   stateWidget during init, there is a useful js at 
+   https://github.com/donabrams/jQuery-Form---Object-Transforms.
+   Include that script and call $(widget).fieldsToObj() in init and you can do 
+   whatever you want with the resulting map.
+ - State objects are reused. Do not use 'this' to store mutable data in a 
+   state. If you need to keep state between states, use widget.[get/save]Data()
+ - If you want to change the state during a state load, be sure to use the
+   queueAfterIfChangingState flag!
 
 
 LICENSE:
