@@ -240,11 +240,13 @@ $(function() {
             if (this._decorateTemplate) {
                 this._decorateTemplate(widget, initialData);
             }
-			$(widget.element, ".stateWidgetAction").bind(
-					$(this).attr("eventType") ? $(this).attr("eventType") : 'click', 
+			$(widget.element, ".stateWidgetAction").each(function(i) {
+					var l = $(i);
+					l.bind(l.attr("eventType") ? l.attr("eventType") : 'click', 
 					function() {
 						widget.doAction($(this).attr("action"));
 					});
+			});
 			callback();
 		};
         //
