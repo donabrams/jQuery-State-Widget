@@ -570,8 +570,9 @@ $(function() {
     $.udel.template = function(args) {
 		this.isCachingEnabled = true;
         this.applyTemplate = function(data, target, callback, keepPreviousTemplate) {
+			var that = this;
 			this.getTemplate(function(template) {
-		        this._applyTemplate(template, data, target, keepPreviousTemplate);
+		        that._applyTemplate(template, data, target, keepPreviousTemplate);
 		        if (callback) {
 		            callback();
 		        }
