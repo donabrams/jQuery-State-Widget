@@ -280,6 +280,8 @@ $(function() {
 	    this.keepPreviousTemplate = false;
 	    this.loadTemplate = function(callback, widget, data, templateName) {
 	        var template = widget.templates[templateName ? templateName : this.templateName];
+console.log("template to render:");
+console.log(template);
 	        template.applyTemplate(widget.getData(), widget.element, callback, this.keepPreviousTemplate);
 	    };
 	    //
