@@ -296,7 +296,7 @@ console.log(template);
 	        callback();
 	    };
 	    //
-	    // This sychronous getNextState uses this.actions
+	    // This sychronous getNextState uses this.actionsg
 	    //  to discover the name of the state mapping to 
 	    //  the name of a state in this widget.
 	    // 
@@ -621,6 +621,8 @@ console.log(template);
 					callback(this.template);
 				}
 	        } else if (this.templateString) {
+console.log("compiling template:");
+console.log(this.templateString);
 				this.template = $.template(this.templateString);
 				if (callback) {
 					callback(this.template);
